@@ -18,7 +18,33 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <readline/readline.h>
+
+int getargs(char *text, char **args, int maxarg) {
+	char *tok;
+	char *arg;
+	char *cmd;
+	int count, index;
+
+	count = 0;
+	tok = strtok(text, " ");
+	while (tok != NULL) {
+		args[count++] = tok;
+		tok = strtok(NULL, " ");
+	}
+
+	return count;
+}
+
+int iscmd(char *cmd, char *text) {
+	if (strcmp(cmd, text) == 0)
+		return 1;
+	return 0;
+}
+
+#define nelem(a) (sizeof(a)/sizeof(a[0]))
 
 int command(char *pcidev, int res) {
 	char prompt[80];
@@ -29,11 +55,29 @@ int command(char *pcidev, int res) {
 
 	fd = openres(pcidev, res);
 
-	while ((line = readline(prompt)) != NULL) {
-		printf("%s\n", line);
+	for (;;) {
+		int argc;
+		char *argv[80];
+		char *cmd;
+
+		line = readline(prompt);
+		if (line == NULL) {
+			printf("\n");
+			break;
+		}
+
+		argc = getargs(line, argv, nelem(argv));
+
+		cmd = argv[0];
+
+		if (iscmd(cmd, "list")) {
+			findres(pcidev);
+		} else if (iscmd(cmd, "exit")) {
+			break;
+		} else if (iscmd(cmd, "quit")) {
+			break;
+		}
 	}
 
 	closeres(fd);
-
-	printf("\n");
 }

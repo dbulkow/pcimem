@@ -71,6 +71,9 @@ int findres(char *pcidev) {
 		exit(1);
 	}
 
+	printf("%-15s %s\n", "BAR", "size in bytes");
+	printf("%-15s %s\n", "------------", "-------------");
+
 	while ((dent = readdir(dir)) != NULL) {
 /*
 		if (strcmp(dent->d_name, "resource") == 0) {
@@ -78,8 +81,19 @@ int findres(char *pcidev) {
 			continue;
 		}
 */
-		if (strstr(dent->d_name, "resource") == dent->d_name && strlen(dent->d_name) > strlen("resource")) {
-			printf("%s\n", dent->d_name);
+		if (strstr(dent->d_name, "resource") == dent->d_name &&
+		    strlen(dent->d_name) > strlen("resource")) {
+			struct stat st;
+			char path[PATH_MAX];
+
+			snprintf(path, sizeof(path), "%s/%s", abspath, dent->d_name);
+
+			if (stat(path, &st) < 0) {
+				perror("stat");
+				continue;
+			}
+
+			printf("%-15s 0x%x\n", dent->d_name, st.st_size);
 		}
 	}
 
