@@ -54,6 +54,7 @@ struct cmd {
 	{"help", helpcmd, "help", "display help"},
 	{"exit", exitcmd, "", ""},
 	{"quit", exitcmd, "", ""},
+	{"q", exitcmd, "", ""},
 	{"pci", pcicmd, "pci [device]", "list or change pci device"},
 	{"bar", barcmd, "bar [bar number]", "choose a PCI BAR"},
 };
