@@ -21,6 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <readline/readline.h>
+#include <readline/history.h>
+
+#include "pcimem.h"
 
 int getargs(char *text, char **args, int maxarg) {
 	char *tok;
@@ -31,6 +34,8 @@ int getargs(char *text, char **args, int maxarg) {
 	count = 0;
 	tok = strtok(text, " ");
 	while (tok != NULL) {
+		if (count >= maxarg)
+			break;
 		args[count++] = tok;
 		tok = strtok(NULL, " ");
 	}
@@ -38,27 +43,79 @@ int getargs(char *text, char **args, int maxarg) {
 	return count;
 }
 
-int iscmd(char *cmd, char *text) {
-	if (strcmp(cmd, text) == 0)
-		return 1;
+#define nelem(a) (sizeof(a)/sizeof(a[0]))
+
+struct cmd {
+	char *cmd_name;
+	int (*cmd_func)(struct state *state, int argc, char **argv);
+	char *cmd_help;
+	char *cmd_longhelp;
+} cmds[] = {
+	{"help", helpcmd, "help", "display help"},
+	{"exit", exitcmd, "", ""},
+	{"quit", exitcmd, "", ""},
+	{"pci", pcicmd, "pci [device]", "list or change pci device"},
+	{"bar", barcmd, "bar [bar number]", "choose a PCI BAR"},
+};
+
+int exitcmd(struct state *unused, int argc, char **argv) {
+	return 2;
+}
+
+int helpcmd(struct state *unused, int argc, char **argv) {
+	int i;
+
+	for (i = 0; i < nelem(cmds); i++) {
+		if (strlen(cmds[i].cmd_help) > 0) {
+			printf("%-20s %s\n", cmds[i].cmd_help, cmds[i].cmd_longhelp);
+		}
+	}
+
 	return 0;
 }
 
-#define nelem(a) (sizeof(a)/sizeof(a[0]))
+int runcmd(struct state *state, int argc, char **argv) {
+	int i;
 
-int command(char *pcidev, int res) {
-	char prompt[80];
-	char *line;
-	int fd;
+	for (i = 0; i < nelem(cmds); i++) {
+		if (strcmp(cmds[i].cmd_name, argv[0]) == 0) {
+			return cmds[i].cmd_func(state, argc, argv);
+		}
+	}
 
-	snprintf(prompt, sizeof(prompt), "%s[bar%d]> ", pcidev, res);
+	printf("unknown command: %s\n", argv[0]);
 
-	fd = openres(pcidev, res);
+	return 0;
+}
+
+int command(char *pcidev, int domain) {
+	struct state state;
+	char *line = NULL;
+
+	state.fd = -1;
+	state.res = -1;
+
+	if (pcidev == NULL)
+		state.pcidev[0] = '\0';
+	else
+		snprintf(state.pcidev, sizeof(state.pcidev), "%04d:%s", domain, pcidev);
+
+	rl_bind_key('\t',rl_abort);
 
 	for (;;) {
+		char prompt[80];
 		int argc;
 		char *argv[80];
-		char *cmd;
+
+		if (line != NULL)
+			free(line);
+
+		if (strlen(state.pcidev) == 0)
+			strcpy(prompt, "nopci> ");
+		else if (state.res < 0)
+			snprintf(prompt, sizeof(prompt), "%s> ", state.pcidev);
+		else
+			snprintf(prompt, sizeof(prompt), "%s[bar%d]> ", state.pcidev, state.res);
 
 		line = readline(prompt);
 		if (line == NULL) {
@@ -66,18 +123,21 @@ int command(char *pcidev, int res) {
 			break;
 		}
 
-		argc = getargs(line, argv, nelem(argv));
+		if (line[0] == '\0')
+			continue;
 
-		cmd = argv[0];
+		add_history(line);
 
-		if (iscmd(cmd, "list")) {
-			findres(pcidev);
-		} else if (iscmd(cmd, "exit")) {
-			break;
-		} else if (iscmd(cmd, "quit")) {
-			break;
+		if ((argc = getargs(line, argv, nelem(argv))) == 0)
+			continue;
+
+		switch (runcmd(&state, argc, argv)) {
+		case 0:
+			continue;
+		default:
+			goto done;
 		}
 	}
-
-	closeres(fd);
+done:
+	closeres(state.fd);
 }

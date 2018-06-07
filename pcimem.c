@@ -20,60 +20,34 @@
 #include <stdlib.h>
 
 void usage(char *cmd) {
-	fprintf(stderr, "usage: %s [-l] -r <resource #> [-p <domain>] -s <bus>:<dev>:<func>\n", cmd);
+	fprintf(stderr, "usage: %s [-p <domain>] -s <bus>:<dev>:<func>\n", cmd);
 	fprintf(stderr, "       -h help\n");
-	fprintf(stderr, "       -l list resources for device\n");
-	fprintf(stderr, "       -r specify resource number\n");
-	fprintf(stderr, "       -p pci domain - typically 0\n");
+	fprintf(stderr, "       -d pci domain [default 0]\n");
 	fprintf(stderr, "       -s pci device bus:dev:func\n");
 	exit(1);
 }
 
 int main(int argc, char **argv) {
 	int flags, opt;
-	char *pcidev;
+	char *pcidev = NULL;
 	int pcidomain = 0;
-	char pci[1024];
-	int res;
-	int res_set = 0;
-	int dolist = 0;
 
-	while ((opt = getopt(argc, argv, "hlr:s:p:")) != -1) {
+	while ((opt = getopt(argc, argv, "hs:d:")) != -1) {
 		switch (opt) {
 		case 'h':
 			usage(argv[0]);
-		case 'l':
-			dolist = 1;
-			break;
 		case 's':
 			pcidev = optarg;
 			break;
-		case 'p':
+		case 'd':
 			pcidomain = atoi(optarg);
-			break;
-		case 'r':
-			res = atoi(optarg);
-			res_set = 1;
 			break;
 		default:
 			usage(argv[0]);
 		}
 	}
 
-	if (pcidev == NULL)
-		usage(argv[0]);
-
-	sprintf(pci, "%04d:%s", pcidomain, pcidev);
-
-	if (dolist) {
-		findres(pci);
-		exit(0);
-	}
-
-	if (res_set != 1)
-		usage(argv[0]);
-
-	command(pci, res);
+	command(pcidev, pcidomain);
 
 	return 0;
 }

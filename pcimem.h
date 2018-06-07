@@ -15,7 +15,19 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-char *pcidir(char *pcidev, char *abspath);
-int command(char *pcidev, int res);
-int openres(char *pcidev, int res);
-int closeres(int fd);
+extern char *devicedir;
+
+struct state {
+	char pcidev[100]; // pci device name
+	int fd; // file descriptor of resource file
+	int res; // resource number
+};
+
+int pcidir(char *pcidev, char *abspath);
+int command(char *pcidev, int domain);
+
+int listcmd(struct state *state, int argc, char **argv);
+int pcicmd(struct state *state, int argc, char **argv);
+int barcmd(struct state *state, int argc, char **argv);
+int helpcmd(struct state *state, int argc, char **argv);
+int exitcmd(struct state *state, int argc, char **argv);

@@ -6,8 +6,10 @@ all: pcimem
 objs :=						\
 	pcimem.o				\
 	command.o				\
-	findres.o				\
-	openres.o				\
+	barcmd.o				\
+	pcicmd.o				\
+
+$(objs): pcimem.h
 
 pcimem: $(objs)
 
