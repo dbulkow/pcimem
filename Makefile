@@ -10,4 +10,6 @@ objs :=						\
 pcimem: $(objs)
 
 clean:
-	$(RM) $(objs)
+	$(RM) $(objs) pcimem
+
+.PHONY: clean
