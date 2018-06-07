@@ -36,7 +36,6 @@ int main(int argc, char **argv) {
 	char pci[1024];
 	int res;
 	int res_set = 0;
-	int fd;
 	int dolist = 0;
 
 	while ((opt = getopt(argc, argv, "hlr:s:p:")) != -1) {
@@ -74,8 +73,7 @@ int main(int argc, char **argv) {
 	if (res_set != 1)
 		usage(argv[0]);
 
-	fd = openres(pci, res);
-	closeres(fd);
+	command(pci, res);
 
 	return 0;
 }

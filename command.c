@@ -1,4 +1,6 @@
 /*
+  Command processing
+
   Copyright (C) 2018 David Bulkow
 
   This program is free software: you can redistribute it and/or modify
@@ -15,7 +17,23 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-char *pcidir(char *pcidev, char *abspath);
-int command(char *pcidev, int res);
-int openres(char *pcidev, int res);
-int closeres(int fd);
+#include <stdio.h>
+#include <readline/readline.h>
+
+int command(char *pcidev, int res) {
+	char prompt[80];
+	char *line;
+	int fd;
+
+	snprintf(prompt, sizeof(prompt), "%s[bar%d]> ", pcidev, res);
+
+	fd = openres(pcidev, res);
+
+	while ((line = readline(prompt)) != NULL) {
+		printf("%s\n", line);
+	}
+
+	closeres(fd);
+
+	printf("\n");
+}
