@@ -27,10 +27,13 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 #include "pcimem.h"
 
-int openres(char *path) {
+int openres(struct state *state, char *path) {
+	struct stat st;
+	void *base;
 	int fd;
 
 	fd = open(path, O_RDWR);
@@ -39,11 +42,42 @@ int openres(char *path) {
 		return -1;
 	}
 
+	if (fstat(fd, &st) < 0) {
+		printf("fstat(%s): %s\n", path, strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	base = mmap(0, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (base == (void *) -1) {
+		printf("mmap(%s): %s\n", path, strerror(errno));
+		close(fd);
+		return -1;
+	}
+
+	state->maplen = st.st_size;
+	state->map = base;
+
 	return fd;
 }
 
-int closeres(int fd) {
-	return close(fd);
+int closeres(struct state *state) {
+	int ret;
+
+	if (state->map != NULL && munmap(state->map, state->maplen) < 0) {
+		printf("munmap: %s\n", strerror(errno));
+		ret = -1;
+	}
+	if (state->fd >= 0 && close(state->fd)) {
+		printf("close: %s\n", strerror(errno));
+		ret = -1;
+	}
+
+	state->map = NULL;
+	state->maplen = 0;
+	state->fd = -1;
+
+	return ret;
 }
 
 int listbar(char *pcidev) {
@@ -92,9 +126,9 @@ int barcmd(struct state *state, int argc, char **argv) {
 	state->res = -1;
 
 	if (state->fd >= 0)
-		closeres(state->fd);
+		closeres(state);
 
-	state->fd = openres(path);
+	state->fd = openres(state, path);
 	if (state->fd < 0)
 		return 0;
 

@@ -95,13 +95,15 @@ int command(char *pcidev, int domain) {
 
 	state.fd = -1;
 	state.res = -1;
+	state.map = NULL;
+	state.maplen = -1;
 
 	if (pcidev == NULL)
 		state.pcidev[0] = '\0';
 	else
 		snprintf(state.pcidev, sizeof(state.pcidev), "%04d:%s", domain, pcidev);
 
-	rl_bind_key('\t',rl_abort);
+	rl_bind_key('\t', rl_abort);
 
 	for (;;) {
 		char prompt[80];
@@ -140,5 +142,5 @@ int command(char *pcidev, int domain) {
 		}
 	}
 done:
-	closeres(state.fd);
+	closeres(&state);
 }

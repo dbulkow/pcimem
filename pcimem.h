@@ -21,10 +21,13 @@ struct state {
 	char pcidev[100]; // pci device name
 	int fd; // file descriptor of resource file
 	int res; // resource number
+	void *map;
+	int maplen;
 };
 
 int pcidir(char *pcidev, char *abspath);
 int command(char *pcidev, int domain);
+int closeres(struct state *state);
 
 int listcmd(struct state *state, int argc, char **argv);
 int pcicmd(struct state *state, int argc, char **argv);
