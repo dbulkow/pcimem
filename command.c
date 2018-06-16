@@ -84,9 +84,39 @@ int runcmd(struct state *state, int argc, char **argv) {
 	return 0;
 }
 
+static char **command_completion(const char *text, int start, int end) {
+	// disable filename completion
+	rl_attempted_completion_over = 1;
+
+	if (start == 0) {
+		char **names = calloc(nelem(cmds)+2, sizeof(char*));
+		int i, j;
+		int matches = 0;
+
+		names[0] = strdup(text);
+		for (i = 0, j = 1; i < nelem(cmds); i++) {
+			if (strncmp(text, cmds[i].cmd_name, strlen(text)) == 0) {
+				names[j++] = strdup(cmds[i].cmd_name);
+				matches++;
+			}
+		}
+
+		if (matches == 1) {
+			names[0] = names[1];
+			names[1] = NULL;
+		}
+
+		return names;
+	}
+
+	return NULL;
+}
+
 int command(char *pcidev, int domain) {
 	struct state state;
 	char *line = NULL;
+
+	rl_attempted_completion_function = command_completion;
 
 	state.fd = -1;
 	state.res = -1;
@@ -97,8 +127,6 @@ int command(char *pcidev, int domain) {
 		state.pcidev[0] = '\0';
 	else
 		snprintf(state.pcidev, sizeof(state.pcidev), "%04d:%s", domain, pcidev);
-
-	rl_bind_key('\t', rl_abort);
 
 	for (;;) {
 		char prompt[80];
@@ -129,14 +157,10 @@ int command(char *pcidev, int domain) {
 		if ((argc = getargs(line, argv, nelem(argv))) == 0)
 			continue;
 
-		switch (runcmd(&state, argc, argv)) {
-		case 0:
-			continue;
-		default:
-			goto done;
-		}
+		if (runcmd(&state, argc, argv))
+			break;
 	}
-done:
+
 	closeres(&state);
 	return 0;
 }
