@@ -41,7 +41,38 @@ int getargs(char *text, char **args, int maxarg) {
 	return count;
 }
 
-#define nelem(a) (sizeof(a)/sizeof(a[0]))
+int cfgcmd(struct state *state, int argc, char **argv) {
+	state->res = -1;
+	return 0;
+}
+
+int radixcmd(struct state *state, int argc, char **argv) {
+	int radix;
+
+	if (argc < 2) {
+		radix = state->radix;
+		if (radix == 0)
+			radix = 10;
+		printf("radix: %d\n", radix);
+		return 0;
+	}
+
+	radix = atoi(argv[1]);
+
+	switch (radix) {
+	case 10:
+		radix = 0;
+	case 2:
+	case 16:
+		break;
+	default:
+		fprintf(stderr, "invalid radix... unchanged\n");
+		return 0;
+	}
+
+	state->radix = radix;
+	return 0;
+}
 
 static struct cmd {
 	char *cmd_name;
@@ -54,6 +85,17 @@ static struct cmd {
 	{"q", exitcmd, ""},
 	{"pci", pcicmd, "list or change pci device"},
 	{"bar", barcmd, "choose a PCI BAR"},
+	{"cfg", cfgcmd, "use config space"},
+	{"rd", rwcmd, "read range"},
+	{"r1", rwcmd, "read byte"},
+	{"r2", rwcmd, "read word"},
+	{"r4", rwcmd, "read double-word"},
+	{"r8", rwcmd, "read quad-word"},
+	{"w1", rwcmd, "write byte"},
+	{"w2", rwcmd, "write word"},
+	{"w4", rwcmd, "write double-word"},
+	{"w8", rwcmd, "write quad-word"},
+	{"radix", radixcmd, "set radix"},
 };
 
 int exitcmd(struct state *unused, int argc, char **argv) {
@@ -112,21 +154,10 @@ static char **command_completion(const char *text, int start, int end) {
 	return NULL;
 }
 
-int command(char *pcidev, int domain) {
-	struct state state;
+int command(struct state *state) {
 	char *line = NULL;
 
 	rl_attempted_completion_function = command_completion;
-
-	state.fd = -1;
-	state.res = -1;
-	state.map = NULL;
-	state.maplen = -1;
-
-	if (pcidev == NULL)
-		state.pcidev[0] = '\0';
-	else
-		snprintf(state.pcidev, sizeof(state.pcidev), "%04d:%s", domain, pcidev);
 
 	for (;;) {
 		char prompt[80];
@@ -136,12 +167,12 @@ int command(char *pcidev, int domain) {
 		if (line != NULL)
 			free(line);
 
-		if (strlen(state.pcidev) == 0)
+		if (strlen(state->pcidev) == 0)
 			strcpy(prompt, "nopci> ");
-		else if (state.res < 0)
-			snprintf(prompt, sizeof(prompt), "%s> ", state.pcidev);
+		else if (state->res < 0)
+			snprintf(prompt, sizeof(prompt), "%s[cfg]> ", state->pcidev);
 		else
-			snprintf(prompt, sizeof(prompt), "%s[bar%d]> ", state.pcidev, state.res);
+			snprintf(prompt, sizeof(prompt), "%s[bar%d]> ", state->pcidev, state->res);
 
 		line = readline(prompt);
 		if (line == NULL) {
@@ -157,10 +188,10 @@ int command(char *pcidev, int domain) {
 		if ((argc = getargs(line, argv, nelem(argv))) == 0)
 			continue;
 
-		if (runcmd(&state, argc, argv))
+		if (runcmd(state, argc, argv))
 			break;
 	}
 
-	closeres(&state);
+	closeres(state);
 	return 0;
 }

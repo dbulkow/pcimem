@@ -8,6 +8,7 @@ objs :=						\
 	command.o				\
 	barcmd.o				\
 	pcicmd.o				\
+	rwcmd.o					\
 
 $(objs): pcimem.h
 

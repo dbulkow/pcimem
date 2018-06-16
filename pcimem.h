@@ -18,19 +18,24 @@
 extern char *devicedir;
 
 struct state {
-	char pcidev[100]; // pci device name
-	int fd; // file descriptor of resource file
-	int res; // resource number
-	void *map;
-	int maplen;
+	char	 pcidev[100];	// pci device name
+	int	 fd;		// file descriptor of resource file
+	int	 res;		// resource number
+	void	*map;
+	int	 maplen;
+	int	 radix;
 };
 
+#define nelem(a) (sizeof(a)/sizeof(a[0]))
+
 int pcidir(char *pcidev, char *abspath);
-int command(char *pcidev, int domain);
 int closeres(struct state *state);
+
+int command(struct state *state);
 
 int listcmd(struct state *state, int argc, char **argv);
 int pcicmd(struct state *state, int argc, char **argv);
 int barcmd(struct state *state, int argc, char **argv);
 int helpcmd(struct state *state, int argc, char **argv);
 int exitcmd(struct state *state, int argc, char **argv);
+int rwcmd(struct state *state, int argc, char **argv);

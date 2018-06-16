@@ -1,5 +1,5 @@
 /*
-  PCI device looking and assignment
+  PCI device lookup and assignment
 
   Copyright (C) 2018 David Bulkow
 
