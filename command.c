@@ -74,6 +74,48 @@ int radixcmd(struct state *state, int argc, char **argv) {
 	return 0;
 }
 
+int hexcmd(struct state *state, int argc, char **argv) {
+	int hex;
+
+	if (argc < 2) {
+		printf("hex format: ");
+
+		switch (state->hex_format) {
+		case 1:
+			printf("1 - byte\n");
+			break;
+		case 2:
+			printf("2 - word\n");
+			break;
+		case 4:
+			printf("4 - doubleword\n");
+			break;
+		case 8:
+			printf("8 - quadword\n");
+			break;
+		default:
+			printf("default - byte\n");
+		}
+		return 0;
+	}
+
+	hex = atoi(argv[1]);
+
+	switch (hex) {
+	case 1:
+	case 2:
+	case 4:
+	case 8:
+		break;
+	default:
+		fprintf(stderr, "invalid hex format\n");
+		return 0;
+	}
+
+	state->hex_format = hex;
+	return 0;
+}
+
 static struct cmd {
 	char *cmd_name;
 	int (*cmd_func)(struct state *state, int argc, char **argv);
@@ -96,6 +138,7 @@ static struct cmd {
 	{"w4", rwcmd, "write double-word"},
 	{"w8", rwcmd, "write quad-word"},
 	{"radix", radixcmd, "set radix"},
+	{"hex", hexcmd, "set hex dump width"},
 };
 
 int exitcmd(struct state *unused, int argc, char **argv) {

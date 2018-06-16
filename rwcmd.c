@@ -43,7 +43,10 @@ static int read_range(struct state *state, int argc, char **argv) {
 		return 0;
 	}
 
-	printf("%d %d\n", loc, len);
+	if (loc + len > state->maplen)
+		len -= (loc + len) - state->maplen;
+
+	hexdumpn(state->hex_format, state->map + loc, len);
 
 	return 0;
 }
