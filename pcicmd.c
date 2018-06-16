@@ -31,6 +31,7 @@
 #include "pcimem.h"
 
 char *devicedir = "/sys/bus/pci/devices";
+char *configdir = "/proc/bus/pci";
 
 int pcidir(char *pcidev, char *abspath) {
 	char path[PATH_MAX];

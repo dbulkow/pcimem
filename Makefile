@@ -7,6 +7,7 @@ objs :=						\
 	pcimem.o				\
 	command.o				\
 	barcmd.o				\
+	cfgspace.o				\
 	hexdump.o				\
 	pcicmd.o				\
 	rwcmd.o					\

@@ -27,6 +27,8 @@ static int read_range(struct state *state, int argc, char **argv) {
 	char *ep;
 	unsigned int loc;
 	unsigned int len;
+	char *map = NULL;
+	unsigned int max;
 
 	if (argc < 3)
 		return 1;
@@ -43,10 +45,25 @@ static int read_range(struct state *state, int argc, char **argv) {
 		return 0;
 	}
 
-	if (loc + len > state->maplen)
-		len -= (loc + len) - state->maplen;
+	if (state->res == -1) {
+		map = readconfig(state, &max);
+	} else {
+		map = state->map;
+		max = state->maplen;
+	}
 
-	hexdumpn(state->hex_format, state->map + loc, len);
+	if (map == NULL) {
+		fprintf(stderr, "no data mapped\n");
+		return 0;
+	}
+
+	if (loc + len > max)
+		len -= (loc + len) - max;
+
+	hexdumpn(state->hex_format, map + loc, len);
+
+	if (state->res == -1 && map)
+		free(map);
 
 	return 0;
 }
