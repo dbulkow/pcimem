@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "pcimem.h"
+
 void usage(char *cmd) {
 	fprintf(stderr, "usage: %s [-p <domain>] -s <bus>:<dev>:<func>\n", cmd);
 	fprintf(stderr, "       -h help\n");
@@ -28,7 +30,7 @@ void usage(char *cmd) {
 }
 
 int main(int argc, char **argv) {
-	int flags, opt;
+	int opt;
 	char *pcidev = NULL;
 	int pcidomain = 0;
 

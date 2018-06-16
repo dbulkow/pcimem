@@ -1,5 +1,5 @@
-CFLAGS += -ggdb
-LDFLAGS += -lreadline
+CFLAGS += -ggdb -Wall -Werror
+LDLIBS += -lreadline
 
 all: pcimem
 

@@ -27,9 +27,7 @@
 
 int getargs(char *text, char **args, int maxarg) {
 	char *tok;
-	char *arg;
-	char *cmd;
-	int count, index;
+	int count;
 
 	count = 0;
 	tok = strtok(text, " ");
@@ -60,7 +58,7 @@ struct cmd {
 };
 
 int exitcmd(struct state *unused, int argc, char **argv) {
-	return 2;
+	return 1;
 }
 
 int helpcmd(struct state *unused, int argc, char **argv) {
@@ -143,4 +141,5 @@ int command(char *pcidev, int domain) {
 	}
 done:
 	closeres(&state);
+	return 0;
 }

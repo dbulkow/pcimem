@@ -19,8 +19,10 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <dirent.h>
 #include <regex.h>
 #include <limits.h>
@@ -133,4 +135,6 @@ int pcicmd(struct state *state, int argc, char **argv) {
 
 	if (argc > 1)
 		return setpci(state, argv[1]);
+
+	return 0;
 }
