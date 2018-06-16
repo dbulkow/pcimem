@@ -101,7 +101,18 @@ int listbar(char *pcidev) {
 	while ((dent = readdir(dir)) != NULL) {
 		if (strstr(dent->d_name, "resource") == dent->d_name &&
 		    strlen(dent->d_name) != strlen("resource")) {
-			printf("%s\n", dent->d_name);
+			struct stat st;
+			char statpath[PATH_MAX];
+			int size = 0;
+
+			snprintf(statpath, sizeof(statpath), "%s/%s", path, dent->d_name);
+
+			if (stat(statpath, &st) < 0)
+				printf("stat(%s): %s\n", statpath, strerror(errno));
+			else
+				size = st.st_size;
+
+			printf("%s %d [%8.8x] bytes\n", dent->d_name, size, size);
 		}
 	}
 
