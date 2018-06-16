@@ -1,5 +1,5 @@
 /*
-  PCI BAR looking, setting, open, close
+  PCI BAR lookup, setting, open, close
 
   Copyright (C) 2018 David Bulkow
 
