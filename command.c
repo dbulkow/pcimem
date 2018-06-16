@@ -43,18 +43,17 @@ int getargs(char *text, char **args, int maxarg) {
 
 #define nelem(a) (sizeof(a)/sizeof(a[0]))
 
-struct cmd {
+static struct cmd {
 	char *cmd_name;
 	int (*cmd_func)(struct state *state, int argc, char **argv);
 	char *cmd_help;
-	char *cmd_longhelp;
 } cmds[] = {
-	{"help", helpcmd, "help", "display help"},
-	{"exit", exitcmd, "", ""},
-	{"quit", exitcmd, "", ""},
-	{"q", exitcmd, "", ""},
-	{"pci", pcicmd, "pci [device]", "list or change pci device"},
-	{"bar", barcmd, "bar [bar number]", "choose a PCI BAR"},
+	{"help", helpcmd, "display help"},
+	{"exit", exitcmd, ""},
+	{"quit", exitcmd, ""},
+	{"q", exitcmd, ""},
+	{"pci", pcicmd, "list or change pci device"},
+	{"bar", barcmd, "choose a PCI BAR"},
 };
 
 int exitcmd(struct state *unused, int argc, char **argv) {
@@ -64,11 +63,9 @@ int exitcmd(struct state *unused, int argc, char **argv) {
 int helpcmd(struct state *unused, int argc, char **argv) {
 	int i;
 
-	for (i = 0; i < nelem(cmds); i++) {
-		if (strlen(cmds[i].cmd_help) > 0) {
-			printf("%-20s %s\n", cmds[i].cmd_help, cmds[i].cmd_longhelp);
-		}
-	}
+	for (i = 0; i < nelem(cmds); i++)
+		if (strlen(cmds[i].cmd_help) > 0)
+			printf("%-20s %s\n", cmds[i].cmd_name, cmds[i].cmd_help);
 
 	return 0;
 }

@@ -130,11 +130,8 @@ int setpci(struct state *state, char *pcidev) {
 }
 
 int pcicmd(struct state *state, int argc, char **argv) {
-	if (argc == 1)
-		return listpci();
-
 	if (argc > 1)
 		return setpci(state, argv[1]);
 
-	return 0;
+	return listpci();
 }
