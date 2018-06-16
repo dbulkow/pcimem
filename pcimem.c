@@ -93,20 +93,21 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	if (pcidev)
+	if (pcidev) {
 		snprintf(state.pcidev, sizeof(state.pcidev), "%04d:%s", domain, pcidev);
 
-	if (bar != NULL) {
-		char *args[2];
+		if (bar != NULL) {
+			char *args[2];
 
-		args[0] = "bar";
-		args[1] = bar;
+			args[0] = "bar";
+			args[1] = bar;
 
-		barcmd(&state, 2, args);
+			barcmd(&state, 2, args);
 
-		if (state.fd < 0) {
-			fprintf(stderr, "invalid bar\n");
-			return 1;
+			if (state.fd < 0) {
+				fprintf(stderr, "invalid bar\n");
+				return 1;
+			}
 		}
 	}
 
