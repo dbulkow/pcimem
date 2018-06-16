@@ -84,29 +84,55 @@ static int read_one(struct state *state, int argc, char **argv) {
 static int write_one(struct state *state, int argc, char **argv) {
 	unsigned int loc;
 	unsigned int val;
+	unsigned int len;
 	char *ep;
+	unsigned char *map;
+	unsigned short *vs;
+	unsigned long *vl;
+	unsigned long long *vll;
 
 	if (argc < 3)
 		return 1;
 
+	if (state->res == -1) {
+		fprintf(stderr, "writes not supported to config space\n");
+		return 0;
+	}
+
 	loc = strtoul(argv[1], &ep, state->radix);
 	if (*ep != '\0') {
-		fprintf(stderr, "location not valid number\n");
+		fprintf(stderr, "location (%s) not valid number\n", argv[1]);
 		return 0;
 	}
 
 	val = strtoul(argv[2], &ep, state->radix);
 	if (*ep != '\0') {
-		fprintf(stderr, "location not valid number\n");
+		fprintf(stderr, "location (%s) not valid number\n", argv[2]);
 		return 0;
 	}
 
-	switch (argv[0][1]) {
-	case '1':
-	case '2':
-	case '4':
-	case '8':
-		printf("%c %d %d\n", argv[0][1], loc, val);
+	len = argv[0][1] - '0';
+
+	if (loc + len > state->maplen)
+		len -= (loc + len) - state->maplen;
+
+	map = state->map;
+
+	switch (len) {
+	case 1:
+		map[loc] = val;
+		break;
+	case 2:
+		vs = (unsigned short *) &map[loc];
+		*vs = val;
+		break;
+	case 4:
+		vl = (unsigned long *) &map[loc];
+		*vl = val;
+		break;
+	case 8:
+		vll = (unsigned long long *) &map[loc];
+		*vll = val;
 		break;
 	default:
 		return 1;
