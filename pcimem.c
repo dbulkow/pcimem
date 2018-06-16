@@ -27,7 +27,7 @@ void usage(char *cmd) {
 	fprintf(stderr, "       -h help\n");
 	fprintf(stderr, "       -d <pci domain> [default 0]\n");
 	fprintf(stderr, "       -s <pci device bus:dev:func>\n");
-	fprintf(stderr, "       -f <bar #>\n");
+	fprintf(stderr, "       -b <bar #>\n");
 	fprintf(stderr, "       -r <radix> from [2, 10, 16]\n");
 	exit(1);
 }
@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
 	struct state state;
 	int domain = 0;
 	char *pcidev = NULL;
+	char *bar = NULL;
 
 	state.res = -1;
 	state.pcidev[0] = '\0';
@@ -56,7 +57,7 @@ int main(int argc, char **argv) {
 			domain = atoi(optarg);
 			break;
 		case 'b':
-			state.res = atoi(optarg);
+			bar = optarg;
 			break;
 		case 'r':
 			state.radix = atoi(optarg);
@@ -77,7 +78,21 @@ int main(int argc, char **argv) {
 	}
 
 	if (pcidev)
-		snprintf("%04d:%s", domain, pcidev);
+		snprintf(state.pcidev, sizeof(state.pcidev), "%04d:%s", domain, pcidev);
+
+	if (bar != NULL) {
+		char *args[2];
+
+		args[0] = "bar";
+		args[1] = bar;
+
+		barcmd(&state, 2, args);
+
+		if (state.fd < 0) {
+			fprintf(stderr, "invalid bar\n");
+			return 1;
+		}
+	}
 
 	command(&state);
 
