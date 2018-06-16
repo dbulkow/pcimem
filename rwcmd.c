@@ -69,30 +69,16 @@ static int read_range(struct state *state, int argc, char **argv) {
 }
 
 static int read_one(struct state *state, int argc, char **argv) {
-	unsigned int loc;
-	char *ep;
+	char *args[3];
 
 	if (argc < 2)
 		return 1;
 
-	loc = strtoul(argv[1], &ep, state->radix);
-	if (*ep != '\0') {
-		fprintf(stderr, "location not valid number\n");
-		return 0;
-	}
+	args[0] = "rd";
+	args[1] = argv[1];
+	args[2] = argv[0]+1;
 
-	switch (argv[0][1]) {
-	case '1':
-	case '2':
-	case '4':
-	case '8':
-		printf("%c %d\n", argv[0][1], loc);
-		break;
-	default:
-		return 1;
-	}
-
-	return 0;
+	return read_range(state, 3, args);
 }
 
 static int write_one(struct state *state, int argc, char **argv) {
