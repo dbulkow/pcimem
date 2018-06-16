@@ -125,6 +125,7 @@ int setpci(struct state *state, char *pcidev) {
 
 	closeres(state);
 	strncpy(state->pcidev, newdev, sizeof(state->pcidev));
+	state->res = -1;
 
 	return 0;
 }
