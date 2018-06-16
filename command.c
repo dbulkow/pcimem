@@ -42,6 +42,7 @@ int getargs(char *text, char **args, int maxarg) {
 }
 
 int cfgcmd(struct state *state, int argc, char **argv) {
+	closeres(state);
 	state->res = -1;
 	return 0;
 }
