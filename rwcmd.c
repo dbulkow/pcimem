@@ -19,7 +19,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 #include "pcimem.h"
 
@@ -28,7 +30,6 @@ static int read_range(struct state *state, int argc, char **argv) {
 	unsigned int loc;
 	unsigned int len;
 	char *map = NULL;
-	unsigned int max;
 
 	if (argc < 3)
 		return 1;
@@ -46,10 +47,20 @@ static int read_range(struct state *state, int argc, char **argv) {
 	}
 
 	if (state->res == -1) {
-		map = readconfig(state, &max);
+		if (state->cfgfd >= 0) {
+			int n;
+			map = malloc(len);
+			n = pread(state->cfgfd, map, len, loc);
+			if (n < 0) {
+				fprintf(stderr, "pread(%s): %s\n", state->pcidev, strerror(errno));
+				return 0;
+			}
+			len = n;
+		}
 	} else {
-		map = state->map;
-		max = state->maplen;
+		map = state->map + loc;
+		if (loc + len > state->maplen)
+			len -= (loc + len) - state->maplen;
 	}
 
 	if (map == NULL) {
@@ -57,10 +68,7 @@ static int read_range(struct state *state, int argc, char **argv) {
 		return 0;
 	}
 
-	if (loc + len > max)
-		len -= (loc + len) - max;
-
-	hexdumpn(state->hex_format, map + loc, len);
+	hexdumpn(state->hex_format, map, len);
 
 	if (state->res == -1 && map)
 		free(map);
@@ -81,6 +89,45 @@ static int read_one(struct state *state, int argc, char **argv) {
 	return read_range(state, 3, args);
 }
 
+static int write_cfg(struct state *state, unsigned int loc, unsigned int len, unsigned int val) {
+	unsigned short *vs;
+	unsigned long *vl;
+	unsigned char data[4];
+	ssize_t n;
+
+	if (state->cfgfd == -1) {
+		fprintf(stderr, "config space not open\n");
+		return 0;
+	}
+
+	switch (len) {
+	case 1:
+		data[0] = val & 0xff;
+		break;
+	case 2:
+		vs = (unsigned short *) data;
+		*vs = val;
+		break;
+	case 4:
+		vl = (unsigned long *) data;
+		*vl = val;
+		break;
+	default:
+		return 1;
+	}
+
+	n = pwrite(state->cfgfd, data, len, loc);
+	if (n < 0) {
+		fprintf(stderr, "pwrite(%s): %s\n", state->pcidev, strerror(errno));
+		return 0;
+	} else if (n != len) {
+		fprintf(stderr, "short write(%s) got %d expected %d\n", state->pcidev, (int) n, len);
+		return 0;
+	}
+
+	return 0;
+}
+
 static int write_one(struct state *state, int argc, char **argv) {
 	unsigned int loc;
 	unsigned int val;
@@ -89,15 +136,9 @@ static int write_one(struct state *state, int argc, char **argv) {
 	unsigned char *map;
 	unsigned short *vs;
 	unsigned long *vl;
-	unsigned long long *vll;
 
 	if (argc < 3)
 		return 1;
-
-	if (state->res == -1) {
-		fprintf(stderr, "writes not supported to config space\n");
-		return 0;
-	}
 
 	loc = strtoul(argv[1], &ep, state->radix);
 	if (*ep != '\0') {
@@ -112,6 +153,9 @@ static int write_one(struct state *state, int argc, char **argv) {
 	}
 
 	len = argv[0][1] - '0';
+
+	if (state->res == -1)
+		return write_cfg(state, loc, len, val);
 
 	if (loc + len > state->maplen)
 		len -= (loc + len) - state->maplen;
@@ -129,10 +173,6 @@ static int write_one(struct state *state, int argc, char **argv) {
 	case 4:
 		vl = (unsigned long *) &map[loc];
 		*vl = val;
-		break;
-	case 8:
-		vll = (unsigned long long *) &map[loc];
-		*vll = val;
 		break;
 	default:
 		return 1;
@@ -153,7 +193,6 @@ static struct {
 	{"w1", write_one},
 	{"w2", write_one},
 	{"w4", write_one},
-	{"w8", write_one},
 };
 
 int rwcmd(struct state *state, int argc, char **argv) {
@@ -175,7 +214,6 @@ int rwcmd(struct state *state, int argc, char **argv) {
 	printf("w1 <loc> <val>       write byte\n");
 	printf("w2 <loc> <val>       write word\n");
 	printf("w4 <loc> <val>       write double-word\n");
-	printf("w8 <loc> <val>       write quad-word\n");
 
 	return 0;
 }

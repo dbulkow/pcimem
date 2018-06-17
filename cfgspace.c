@@ -1,5 +1,5 @@
 /*
-  Read PCI config space
+  Open/close PCI config space
 
   Copyright (C) 2018 David Bulkow
 
@@ -29,72 +29,39 @@
 
 #include "pcimem.h"
 
-static char *configpath(const char *pcidev) {
-	char *path;
-	unsigned int domain;
-	unsigned int bus;
-	unsigned int dev;
-	unsigned int func;
-
-	if (sscanf(pcidev, "%d:%x:%x.%d", &domain, &bus, &dev, &func) < 0) {
-		fprintf(stderr, "configpath(%s): parse error, %s\n", pcidev, strerror(errno));
-		return NULL;
-	}
-
-	path = malloc(PATH_MAX);
-	if (path == NULL) {
-		fprintf(stderr, "out of memory\n");
-		return NULL;
-	}
-
-	snprintf(path, PATH_MAX, "%s/%2.2x/%2.2x.%d", configdir, bus, dev, func);
-
-	return path;
-}
-
-void *readconfig(struct state *state, unsigned int *len) {
+int opencfg(struct state *state) {
 	struct stat st;
-	char *path = NULL;
-	char *p = NULL;
+	char path[PATH_MAX];
 	int fd;
-	ssize_t n;
 
-	if ((path = configpath(state->pcidev)) == NULL)
-		return NULL;
+	snprintf(path, sizeof(path), "%s/%s/config", devicedir, state->pcidev);
 
 	fd = open(path, O_RDWR);
 	if (fd < 0) {
-		printf("open(%s): %s\n", path, strerror(errno));
-		goto leave;
+		fprintf(stderr, "open(%s): %s\n", path, strerror(errno));
+		return -1;
 	}
 
-	if (fstat(fd, &st)) {
+	if (fstat(fd, &st) < 0) {
 		fprintf(stderr, "fstat(%s): %s\n", path, strerror(errno));
-		goto leave;
+		return -1;
 	}
 
-	p = malloc(st.st_size);
+	state->cfglen = st.st_size;
 
-	n = read(fd, p, st.st_size);
-	if (n < 0) {
-		fprintf(stderr, "read(%s): %s\n", path, strerror(errno));
-		free(p);
-		p = NULL;
-		goto leave;
-	} else if (n != st.st_size) {
-		fprintf(stderr, "short read(%s) got %d expected %d\n", path, (int)n, (int)st.st_size);
-		free(p);
-		p = NULL;
-		goto leave;
+	return fd;
+}
+
+int closecfg(struct state *state) {
+	state->cfglen = -1;
+
+	if (state->fd >= 0) {
+		if (close(state->fd)) {
+			fprintf(stderr, "close(%s): %s\n", state->pcidev, strerror(errno));
+			return -1;
+		}
 	}
 
-	*len = (unsigned int) n;
-leave:
-	free(path);
-
-	if (fd >= 0)
-		if (close(fd))
-			fprintf(stderr, "close: %s\n", strerror(errno));
-
-	return p;
+	state->fd = -1;
+	return 0;
 }

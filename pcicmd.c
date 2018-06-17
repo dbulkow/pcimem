@@ -31,7 +31,6 @@
 #include "pcimem.h"
 
 char *devicedir = "/sys/bus/pci/devices";
-char *configdir = "/proc/bus/pci";
 
 int pcidir(char *pcidev, char *abspath) {
 	char path[PATH_MAX];
@@ -127,6 +126,10 @@ int setpci(struct state *state, char *pcidev) {
 	closeres(state);
 	strncpy(state->pcidev, newdev, sizeof(state->pcidev));
 	state->res = -1;
+
+	closecfg(state);
+	if ((state->cfgfd = opencfg(state)) == -1)
+		return 0;
 
 	return 0;
 }

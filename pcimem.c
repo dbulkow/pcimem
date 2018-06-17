@@ -45,6 +45,8 @@ int main(int argc, char **argv) {
 	state.fd = -1;
 	state.map = NULL;
 	state.maplen = -1;
+	state.cfgfd = -1;
+	state.cfglen = -1;
 	state.radix = 0;
 	state.hex_format = 1;
 
@@ -109,6 +111,10 @@ int main(int argc, char **argv) {
 				return 1;
 			}
 		}
+
+		state.cfgfd = opencfg(&state);
+		if (state.cfgfd < 0)
+			return 1;
 	}
 
 	command(&state);

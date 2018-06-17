@@ -137,7 +137,6 @@ static struct cmd {
 	{"w1", rwcmd, "write byte"},
 	{"w2", rwcmd, "write word"},
 	{"w4", rwcmd, "write double-word"},
-	{"w8", rwcmd, "write quad-word"},
 	{"radix", radixcmd, "set radix"},
 	{"hex", hexcmd, "set hex dump width"},
 };

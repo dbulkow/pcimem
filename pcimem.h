@@ -16,7 +16,6 @@
 */
 
 extern char *devicedir;
-extern char *configdir;
 
 struct state {
 	char	 pcidev[100];	// pci device name
@@ -24,6 +23,8 @@ struct state {
 	int	 res;		// resource number
 	void	*map;		// pointer to mapped memory
 	int	 maplen;	// size of mapped memory
+	int	 cfgfd;		// config file descriptor
+	int	 cfglen;	// size of config file
 	int	 radix;		// base of input values
 	int	 hex_format;	// determines hex display width
 };
@@ -32,7 +33,8 @@ struct state {
 
 int pcidir(char *pcidev, char *abspath);
 int closeres(struct state *state);
-void *readconfig(struct state *state, unsigned int *len);
+int opencfg(struct state *state);
+int closecfg(struct state *state);
 
 void hexdump(int width, const char *p, const char *ep);
 void hexdumpn(int width, const char *p, int n);
