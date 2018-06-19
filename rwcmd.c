@@ -134,8 +134,6 @@ static int write_one(struct state *state, int argc, char **argv) {
 	unsigned int len;
 	char *ep;
 	unsigned char *map;
-	unsigned short *vs;
-	unsigned long *vl;
 
 	if (argc < 3)
 		return 1;
@@ -167,12 +165,14 @@ static int write_one(struct state *state, int argc, char **argv) {
 		map[loc] = val;
 		break;
 	case 2:
-		vs = (unsigned short *) &map[loc];
-		*vs = val;
+		map[loc+0] = val & 0xff;
+		map[loc+1] = (val >> 8) & 0xff;
 		break;
 	case 4:
-		vl = (unsigned long *) &map[loc];
-		*vl = val;
+		map[loc+0] = val & 0xff;
+		map[loc+1] = (val >> 8) & 0xff;
+		map[loc+2] = (val >> 16) & 0xff;
+		map[loc+3] = (val >> 24) & 0xff;
 		break;
 	default:
 		return 1;
