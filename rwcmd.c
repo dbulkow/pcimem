@@ -90,8 +90,6 @@ static int read_one(struct state *state, int argc, char **argv) {
 }
 
 static int write_cfg(struct state *state, unsigned int loc, unsigned int len, unsigned int val) {
-	unsigned short *vs;
-	unsigned long *vl;
 	unsigned char data[4];
 	ssize_t n;
 
@@ -105,12 +103,14 @@ static int write_cfg(struct state *state, unsigned int loc, unsigned int len, un
 		data[0] = val & 0xff;
 		break;
 	case 2:
-		vs = (unsigned short *) data;
-		*vs = val;
+		data[0] = val & 0xff;
+		data[1] = (val >> 8) & 0xff;
 		break;
 	case 4:
-		vl = (unsigned long *) data;
-		*vl = val;
+		data[0] = val & 0xff;
+		data[1] = (val >> 8) & 0xff;
+		data[2] = (val >> 16) & 0xff;
+		data[3] = (val >> 24) & 0xff;
 		break;
 	default:
 		return 1;
