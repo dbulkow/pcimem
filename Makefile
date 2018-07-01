@@ -1,5 +1,5 @@
 CFLAGS += -ggdb -Wall -Werror
-LDLIBS += -lreadline
+LDLIBS += -lreadline -lpci
 
 all: pcimem
 

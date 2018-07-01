@@ -27,6 +27,7 @@
 #include <regex.h>
 #include <limits.h>
 #include <errno.h>
+#include <pci/pci.h>
 
 #include "pcimem.h"
 
@@ -57,9 +58,36 @@ int pcidir(char *pcidev, char *abspath) {
 	return 0;
 }
 
-int listpci() {
+static struct pci_dev *lookup_pci(struct pci_access *pacc, const char *pcidev) {
+	struct pci_dev *dev;
+	int domain, bus, device, func;
+	int n;
+
+	n = sscanf(pcidev, "%x:%x:%x.%d", &domain, &bus, &device, &func);
+	if (n != 4) {
+		fprintf(stderr, "device scan error: %s\n", strerror(errno));
+		return NULL;
+	}
+
+	for (dev = pacc->devices; dev; dev = dev->next) {
+		if (dev->domain == domain && dev->bus == bus && dev->dev == device && dev->func == func)
+			return dev;
+	}
+
+	return NULL;
+}
+
+static int listpci(void) {
 	DIR *dir;
 	struct dirent *dent;
+	struct pci_access *pacc;
+	struct pci_dev *dev;
+	char namebuf[1024], *name;
+	char classbuf[128], *class;
+
+	pacc = pci_alloc();
+	pci_init(pacc);
+	pci_scan_bus(pacc);
 
 	dir = opendir(devicedir);
 	if (dir == NULL) {
@@ -72,10 +100,25 @@ int listpci() {
 		    strcmp(dent->d_name, "..") == 0) {
 			continue;
 		}
-		printf("%s\n", dent->d_name);
+
+		dev = lookup_pci(pacc, dent->d_name);
+
+		if (dev == NULL) {
+			printf("%s\n", dent->d_name);
+			continue;
+		}
+
+		pci_fill_info(dev, PCI_FILL_IDENT | PCI_FILL_BASES | PCI_FILL_CLASS);
+
+		name = pci_lookup_name(pacc, namebuf, sizeof(namebuf), PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE, dev->vendor_id, dev->device_id);
+		class = pci_lookup_name(pacc, classbuf, sizeof(classbuf), PCI_LOOKUP_CLASS, dev->device_class);
+
+		printf("%04x:%02x:%02x.%d %s: %s\n", dev->domain, dev->bus, dev->dev, dev->func, class, name);
 	}
 
 	closedir(dir);
+
+	pci_cleanup(pacc);
 
 	return 0;
 }
