@@ -41,7 +41,6 @@ void hexdumpn(int width, const char *p, int n);
 
 int command(struct state *state);
 
-int listcmd(struct state *state, int argc, char **argv);
 int pcicmd(struct state *state, int argc, char **argv);
 int barcmd(struct state *state, int argc, char **argv);
 int helpcmd(struct state *state, int argc, char **argv);
