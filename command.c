@@ -25,7 +25,7 @@
 
 #include "pcimem.h"
 
-int getargs(char *text, char **args, int maxarg) {
+static int getargs(char *text, char **args, int maxarg) {
 	char *tok;
 	int count;
 
@@ -41,13 +41,13 @@ int getargs(char *text, char **args, int maxarg) {
 	return count;
 }
 
-int cfgcmd(struct state *state, int argc, char **argv) {
+static int cfgcmd(struct state *state, int argc, char **argv) {
 	closeres(state);
 	state->res = -1;
 	return 0;
 }
 
-int radixcmd(struct state *state, int argc, char **argv) {
+static int radixcmd(struct state *state, int argc, char **argv) {
 	int radix;
 
 	if (argc < 2) {
@@ -75,7 +75,7 @@ int radixcmd(struct state *state, int argc, char **argv) {
 	return 0;
 }
 
-int hexcmd(struct state *state, int argc, char **argv) {
+static int hexcmd(struct state *state, int argc, char **argv) {
 	int hex;
 
 	if (argc < 2) {
@@ -117,6 +117,12 @@ int hexcmd(struct state *state, int argc, char **argv) {
 	return 0;
 }
 
+static int exitcmd(struct state *unused, int argc, char **argv) {
+	return 1;
+}
+
+static int helpcmd(struct state *unused, int argc, char **argv);
+
 static struct cmd {
 	char *cmd_name;
 	int (*cmd_func)(struct state *state, int argc, char **argv);
@@ -141,11 +147,7 @@ static struct cmd {
 	{"hex", hexcmd, "set hex dump width"},
 };
 
-int exitcmd(struct state *unused, int argc, char **argv) {
-	return 1;
-}
-
-int helpcmd(struct state *unused, int argc, char **argv) {
+static int helpcmd(struct state *unused, int argc, char **argv) {
 	int i;
 
 	for (i = 0; i < nelem(cmds); i++)
@@ -155,7 +157,7 @@ int helpcmd(struct state *unused, int argc, char **argv) {
 	return 0;
 }
 
-int runcmd(struct state *state, int argc, char **argv) {
+static int runcmd(struct state *state, int argc, char **argv) {
 	int i;
 
 	for (i = 0; i < nelem(cmds); i++) {

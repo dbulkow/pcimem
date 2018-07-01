@@ -43,7 +43,4 @@ int command(struct state *state);
 
 int pcicmd(struct state *state, int argc, char **argv);
 int barcmd(struct state *state, int argc, char **argv);
-int helpcmd(struct state *state, int argc, char **argv);
-int exitcmd(struct state *state, int argc, char **argv);
 int rwcmd(struct state *state, int argc, char **argv);
-int hexcmd(struct state *state, int argc, char **argv);
