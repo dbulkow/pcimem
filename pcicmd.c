@@ -69,10 +69,9 @@ static struct pci_dev *lookup_pci(struct pci_access *pacc, const char *pcidev) {
 		return NULL;
 	}
 
-	for (dev = pacc->devices; dev; dev = dev->next) {
+	for (dev = pacc->devices; dev; dev = dev->next)
 		if (dev->domain == domain && dev->bus == bus && dev->dev == device && dev->func == func)
 			return dev;
-	}
 
 	return NULL;
 }
