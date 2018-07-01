@@ -80,7 +80,7 @@ int listpci() {
 	return 0;
 }
 
-int setpci(struct state *state, char *pcidev) {
+static int setpci(struct state *state, char *pcidev) {
 	char newdev[sizeof(state->pcidev)];
 	regex_t regex;
 	int res;
