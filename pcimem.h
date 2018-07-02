@@ -44,3 +44,5 @@ int command(struct state *state);
 int pcicmd(struct state *state, int argc, char **argv);
 int barcmd(struct state *state, int argc, char **argv);
 int rwcmd(struct state *state, int argc, char **argv);
+
+char *pci_complete(const char *text, int state);

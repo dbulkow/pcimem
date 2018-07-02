@@ -75,6 +75,23 @@ static int radixcmd(struct state *state, int argc, char **argv) {
 	return 0;
 }
 
+static char *radix_complete(const char *text, int state) {
+	static char *fmts[] = {"2", "10", "16", NULL};
+	static int index, len;
+	char *name;
+
+	if (state == 0) {
+		index = 0;
+		len = strlen(text);
+	}
+
+	while ((name = fmts[index++]))
+		if (strncmp(name, text, len) == 0)
+			return strdup(name);
+
+	return NULL;
+}
+
 static int hexcmd(struct state *state, int argc, char **argv) {
 	int hex;
 
@@ -117,6 +134,23 @@ static int hexcmd(struct state *state, int argc, char **argv) {
 	return 0;
 }
 
+static char *hex_complete(const char *text, int state) {
+	static char *fmts[] = {"1", "2", "4", "8", NULL};
+	static int index, len;
+	char *name;
+
+	if (state == 0) {
+		index = 0;
+		len = strlen(text);
+	}
+
+	while ((name = fmts[index++]))
+		if (strncmp(name, text, len) == 0)
+			return strdup(name);
+
+	return NULL;
+}
+
 static int exitcmd(struct state *unused, int argc, char **argv) {
 	return 1;
 }
@@ -126,25 +160,26 @@ static int helpcmd(struct state *unused, int argc, char **argv);
 static struct cmd {
 	char *cmd_name;
 	int (*cmd_func)(struct state *state, int argc, char **argv);
+	char *(*cmd_completion)(const char *text, int state);
 	char *cmd_help;
 } cmds[] = {
-	{"help", helpcmd, "display help"},
-	{"exit", exitcmd, ""},
-	{"quit", exitcmd, ""},
-	{"q", exitcmd, ""},
-	{"pci", pcicmd, "list or change pci device"},
-	{"bar", barcmd, "choose a PCI BAR"},
-	{"cfg", cfgcmd, "use config space"},
-	{"rd", rwcmd, "read range"},
-	{"r1", rwcmd, "read byte"},
-	{"r2", rwcmd, "read word"},
-	{"r4", rwcmd, "read double-word"},
-	{"r8", rwcmd, "read quad-word"},
-	{"w1", rwcmd, "write byte"},
-	{"w2", rwcmd, "write word"},
-	{"w4", rwcmd, "write double-word"},
-	{"radix", radixcmd, "set radix"},
-	{"hex", hexcmd, "set hex dump width"},
+	{"help",  helpcmd,  NULL, "display help"},
+	{"exit",  exitcmd,  NULL, ""},
+	{"quit",  exitcmd,  NULL, ""},
+	{"q",     exitcmd,  NULL, ""},
+	{"pci",   pcicmd,   pci_complete, "list or change pci device"},
+	{"bar",   barcmd,   NULL, "choose a PCI BAR"},
+	{"cfg",   cfgcmd,   NULL, "use config space"},
+	{"rd",    rwcmd,    NULL, "read range"},
+	{"r1",    rwcmd,    NULL, "read byte"},
+	{"r2",    rwcmd,    NULL, "read word"},
+	{"r4",    rwcmd,    NULL, "read double-word"},
+	{"r8",    rwcmd,    NULL, "read quad-word"},
+	{"w1",    rwcmd,    NULL, "write byte"},
+	{"w2",    rwcmd,    NULL, "write word"},
+	{"w4",    rwcmd,    NULL, "write double-word"},
+	{"radix", radixcmd, radix_complete, "set radix"},
+	{"hex",   hexcmd,   hex_complete, "set hex dump width"},
 };
 
 static int helpcmd(struct state *unused, int argc, char **argv) {
@@ -171,32 +206,61 @@ static int runcmd(struct state *state, int argc, char **argv) {
 	return 0;
 }
 
+static char *cmds_completion(const char *text, int state) {
+	static int index, len;
+	char *name;
+
+	if (state == 0) {
+		index = 0;
+		len = strlen(text);
+	}
+
+	while ((name = cmds[index++].cmd_name))
+		if (strncmp(name, text, len) == 0)
+			return strdup(name);
+
+	return NULL;
+}
+
 static char **command_completion(const char *text, int start, int end) {
+	rl_compentry_func_t *completion;
+	char **names = NULL;
+	char *buf;
+	char *args[3];
+	int n;
+	int index = -1;
+	int i;
+
 	// disable filename completion
 	rl_attempted_completion_over = 1;
 
-	if (start == 0) {
-		char **names = calloc(nelem(cmds)+2, sizeof(char*));
-		int i, j;
-		int matches = 0;
+	if (start == 0)
+		return rl_completion_matches(text, cmds_completion);
 
-		names[0] = strdup(text);
-		for (i = 0, j = 1; i < nelem(cmds); i++) {
-			if (strncmp(text, cmds[i].cmd_name, strlen(text)) == 0) {
-				names[j++] = strdup(cmds[i].cmd_name);
-				matches++;
-			}
-		}
+	buf = strdup(rl_line_buffer);
+	n = getargs(buf, args, nelem(args));
 
-		if (matches == 1) {
-			names[0] = names[1];
-			names[1] = NULL;
-		}
+	// get out if already processed command argument
+	if (n >= 2 && rl_line_buffer[strlen(rl_line_buffer)-1] == ' ')
+		goto bail;
 
-		return names;
+	for (i = 0; i < nelem(cmds); i++)
+		if (strcmp(cmds[i].cmd_name, args[0]) == 0)
+			index = i;
+
+	if (index == -1) {
+		fprintf(stderr, "\nunknown command: %s\n", args[0]);
+		goto bail;
 	}
 
-	return NULL;
+	completion = cmds[index].cmd_completion;
+	if (completion == NULL)
+		goto bail;
+
+	names = rl_completion_matches(text, completion);
+bail:
+	free(buf);
+	return names;
 }
 
 int command(struct state *state) {

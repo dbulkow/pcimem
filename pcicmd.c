@@ -182,3 +182,45 @@ int pcicmd(struct state *state, int argc, char **argv) {
 
 	return listpci();
 }
+
+char *pci_complete(const char *text, int state) {
+	static char **devs;
+	static int index, len;
+	char *name;
+
+	if (state == 0) {
+		DIR *dir;
+		struct dirent *dent;
+		int i;
+
+		index = 0;
+		len = strlen(text);
+
+		devs = calloc(1, sizeof(char *));
+
+		dir = opendir(devicedir);
+		if (dir == NULL)
+			return NULL;
+
+		i = 0;
+		while ((dent = readdir(dir)) != NULL) {
+			if (strcmp(dent->d_name, ".") == 0 ||
+			    strcmp(dent->d_name, "..") == 0) {
+				continue;
+			}
+
+			devs[i++] = strdup(dent->d_name);
+
+			devs = realloc(devs, sizeof(char *) * (i+1));
+			devs[i] = NULL;
+		}
+
+		closedir(dir);
+	}
+
+	while ((name = devs[index++]))
+		if (strncmp(name, text, len) == 0)
+			return strdup(name);
+
+	return NULL;
+}
